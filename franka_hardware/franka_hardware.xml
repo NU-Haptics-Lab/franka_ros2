@@ -1,6 +1,6 @@
 <library path="franka_hardware">
-    <class name="franka_hardware/FrankaHardwareInterface"
-           type="franka_hardware::FrankaHardwareInterface"
+    <class name="franka_hardware/FrankaHardwareInterfaceNew"
+           type="franka_hardware::FrankaHardwareInterfaceNew"
            base_class_type="hardware_interface::SystemInterface">
 
         <description>

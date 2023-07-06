@@ -18,7 +18,7 @@
 #include <string>
 
 namespace franka_example_controllers {
-
+ 
 controller_interface::InterfaceConfiguration
 GravityCompensationExampleController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;

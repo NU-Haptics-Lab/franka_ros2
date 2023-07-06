@@ -25,7 +25,9 @@ find_package(Franka REQUIRED)
 add_library(franka_hardware
         SHARED
         src/franka_hardware_interface.cpp
-        src/robot.cpp)
+        src/franka_hardware_interface_new.cpp
+        src/robot.cpp
+        src/robot_new.cpp)
 target_include_directories(
         franka_hardware
         PRIVATE
