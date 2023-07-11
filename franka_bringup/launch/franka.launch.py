@@ -16,11 +16,12 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
+import launch
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Shutdown
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -31,18 +32,27 @@ def generate_launch_description():
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_rviz_parameter_name = 'use_rviz'
+    arm_id_name = 'arm_id'
+    frame_prefix_name = 'frame_prefix'
+    ns_name = 'namespace'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
+    arm_id = LaunchConfiguration(arm_id_name)
+    frame_prefix = LaunchConfiguration(frame_prefix_name)
+    ns = LaunchConfiguration(ns_name)
+
+    controller_path = PathJoinSubstitution([ns, "controller_manager"])
 
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
                                      'panda_arm.urdf.xacro')
     robot_description = Command(
         [FindExecutable(name='xacro'), ' ', franka_xacro_file, ' hand:=', load_gripper,
          ' robot_ip:=', robot_ip, ' use_fake_hardware:=', use_fake_hardware,
+         ' arm_id:=', arm_id,
          ' fake_sensor_commands:=', fake_sensor_commands])
 
     rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
@@ -69,6 +79,14 @@ def generate_launch_description():
             default_value='false',
             description='Use fake hardware'),
         DeclareLaunchArgument(
+            arm_id_name,
+            default_value='panda1',
+            description='Name of the panda: panda1 or panda2'),
+        DeclareLaunchArgument(
+            frame_prefix_name,
+            default_value='left_',
+            description='Prefix for the panda.'),
+        DeclareLaunchArgument(
             fake_sensor_commands_parameter_name,
             default_value='false',
             description="Fake sensor commands. Only valid when '{}' is true".format(
@@ -78,12 +96,18 @@ def generate_launch_description():
             default_value='true',
             description='Use Franka Gripper as an end-effector, otherwise, the robot is loaded '
                         'without an end-effector.'),
+        DeclareLaunchArgument(
+            ns_name,
+            default_value='/',
+            description='Namespace for the franka.'),
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            parameters=[{'robot_description': robot_description}],
+            parameters=[{'robot_description': robot_description},
+                        {'frame_prefix': frame_prefix},
+                        ],
         ),
         Node(
             package='joint_state_publisher',
@@ -107,7 +131,9 @@ def generate_launch_description():
         Node(
             package='controller_manager',
             executable='spawner',
-            arguments=['joint_state_broadcaster'],
+            arguments=['-c', controller_path,
+                       '-t', 'joint_state_broadcaster/JointStateBroadcaster',
+                       'joint_state_broadcaster'],
             output='screen',
         ),
         IncludeLaunchDescription(

@@ -104,11 +104,11 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
       hw_efforts_.data()[i] -= tau_bias.data()[i] - hw_coriolis_.data()[i];
     }
     
-    std::cout << "feed forward torque: [";
-    for(int i{0}; i < (int) sizeof(hw_efforts_.data()); i++){
-      std::cout << hw_efforts_.data()[i] << ' ';
-    }
-    std::cout << "]\n";
+    // std::cout << "feed forward torque: [";
+    // for(int i{0}; i < (int) sizeof(hw_efforts_.data()); i++){
+    //   std::cout << hw_efforts_.data()[i] << ' ';
+    // }
+    // std::cout << "]\n";
   }
   j++;
   return hardware_interface::return_type::OK;
