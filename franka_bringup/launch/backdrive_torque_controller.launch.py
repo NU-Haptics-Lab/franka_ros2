@@ -68,7 +68,7 @@ def generate_launch_description():
                         'without an end-effector.'),
         DeclareLaunchArgument(
             arm_id_name,
-            default_value='panda1',
+            default_value='panda',
             description='Name of the panda: panda1 or panda2'),
         DeclareLaunchArgument(
             frame_prefix_name,
