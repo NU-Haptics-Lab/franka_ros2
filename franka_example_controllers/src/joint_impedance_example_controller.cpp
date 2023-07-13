@@ -29,7 +29,8 @@ JointImpedanceExampleController::command_interface_configuration() const {
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
+    // config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");   //for real hardware
+    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
   }
   return config;
 }
@@ -46,19 +47,42 @@ JointImpedanceExampleController::state_interface_configuration() const {
 }
 
 controller_interface::return_type JointImpedanceExampleController::update(const rclcpp::Time &, const rclcpp::Duration & ) {
+  // if (initial_q_ != desired_iq_){
+  //   const auto max_dq = 2.0;
+  //   for (int i{0}; i < 7; i++){
+  //     const auto diff = desired_iq_(i) - initial_q_(i);
+  //     const auto max_speed_steps = diff/max_dq;
+  //     if 
+  //   }
+    
+
+  //   const double kAlpha = 0.99;
+  //   dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
+  //   Vector7d tau_d_calculated =
+  //       k_gains_.cwiseProduct(q_goal - q_) + d_gains_.cwiseProduct(-dq_filtered_);
+  //   for (int i = 0; i < num_joints; ++i) {
+  //     command_interfaces_[i].set_value(tau_d_calculated(i));
+  //     // command_interfaces_[i].set_value(q_goal(i)); // for fake hardware
+  //   }
+  //   return controller_interface::return_type::OK;
+  // }
   updateJointStates();
   Vector7d q_goal = initial_q_;
   auto time = get_node()->now() - start_time_;
-  double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 2.5 * time.seconds()));
-  q_goal(3) += delta_angle;
-  q_goal(4) += delta_angle;
+  double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 5.0 * time.seconds()));
+  double delta_angle2 = M_PI / 8.0 * (std::sin(M_PI / 5.0 * time.seconds()));
+  q_goal(0) += delta_angle;
+  q_goal(3) += delta_angle2;
+  q_goal(5) += delta_angle2;
+  
 
   const double kAlpha = 0.99;
   dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
   Vector7d tau_d_calculated =
       k_gains_.cwiseProduct(q_goal - q_) + d_gains_.cwiseProduct(-dq_filtered_);
   for (int i = 0; i < num_joints; ++i) {
-    command_interfaces_[i].set_value(tau_d_calculated(i));
+    // command_interfaces_[i].set_value(tau_d_calculated(i));
+    command_interfaces_[i].set_value(q_goal(i)); // for fake hardware
   }
   return controller_interface::return_type::OK;
 }
@@ -117,7 +141,9 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointImpedanceExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
   initial_q_ = q_;
+  RCLCPP_INFO_STREAM(get_node()->get_logger(), initial_q_);
   start_time_ = get_node()->now();
+  
   return CallbackReturn::SUCCESS;
 }
 

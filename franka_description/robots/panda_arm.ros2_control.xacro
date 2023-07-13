@@ -19,6 +19,7 @@
         <joint name="${joint_name}">
           <xacro:if value="${use_fake_hardware}">
             <command_interface name="position"/>
+            <!-- <command_interface name="effort"/> -->
           </xacro:if>
 
           <xacro:unless value="${use_fake_hardware}">

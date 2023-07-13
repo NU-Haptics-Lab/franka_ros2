@@ -44,11 +44,14 @@ class JointImpedanceExampleController : public controller_interface::ControllerI
   const int num_joints = 7;
   Vector7d q_;
   Vector7d initial_q_;
+  Vector7d desired_iq_{1.69469, -1.7544, -0.811505, -1.50818, -1.65261, 2.22612, -2.25689};
+  // Vector7d steps;
   Vector7d dq_;
   Vector7d dq_filtered_;
   Vector7d k_gains_;
   Vector7d d_gains_;
   rclcpp::Time start_time_;
+  int i{0};
   void updateJointStates();
 };
 

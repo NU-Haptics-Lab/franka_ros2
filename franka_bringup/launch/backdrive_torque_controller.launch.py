@@ -97,7 +97,7 @@ def generate_launch_description():
             executable='spawner',
             arguments=['-c', controller_path,
                        '-t', 'franka_example_controllers/BackdriveTorqueController',
-                       'backdrive_torque_controller2', 
+                       'backdrive_torque_controller', 
                        ],
             output='screen',
         ),

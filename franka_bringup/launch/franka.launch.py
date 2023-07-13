@@ -80,11 +80,11 @@ def generate_launch_description():
             description='Use fake hardware'),
         DeclareLaunchArgument(
             arm_id_name,
-            default_value='panda1',
+            default_value='panda',
             description='Name of the panda: panda1 or panda2'),
         DeclareLaunchArgument(
             frame_prefix_name,
-            default_value='left_',
+            default_value='',
             description='Prefix for the panda.'),
         DeclareLaunchArgument(
             fake_sensor_commands_parameter_name,
@@ -93,7 +93,7 @@ def generate_launch_description():
                 use_fake_hardware_parameter_name)),
         DeclareLaunchArgument(
             load_gripper_parameter_name,
-            default_value='true',
+            default_value='false',
             description='Use Franka Gripper as an end-effector, otherwise, the robot is loaded '
                         'without an end-effector.'),
         DeclareLaunchArgument(

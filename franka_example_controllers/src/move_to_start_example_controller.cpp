@@ -29,7 +29,8 @@ MoveToStartExampleController::command_interface_configuration() const {
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
+    // config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
+    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position"); //for fake hardware
   }
   return config;
 }
@@ -57,11 +58,14 @@ controller_interface::return_type MoveToStartExampleController::update(const rcl
     Vector7d tau_d_calculated =
         k_gains_.cwiseProduct(q_desired - q_) + d_gains_.cwiseProduct(-dq_filtered_);
     for (int i = 0; i < 7; ++i) {
-      command_interfaces_[i].set_value(tau_d_calculated(i));
+      // command_interfaces_[i].set_value(tau_d_calculated(i));
+      command_interfaces_[i].set_value(q_(i) + dq_filtered_(i));
     }
   } else {
-    for (auto& command_interface : command_interfaces_) {
-      command_interface.set_value(0);
+    // for (auto& command_interface : command_interfaces_) {
+      for (int i = 0; i < 7; ++i) {
+      // command_interface.set_value(0);
+      command_interfaces_[i].set_value(q_(i)); // for fake hardware
     }
   }
   return controller_interface::return_type::OK;

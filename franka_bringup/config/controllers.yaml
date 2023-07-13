@@ -105,14 +105,14 @@ backdrive_torque_controller:
 #       - 1.0
 #       - 1.0
 #       - 1.0
-backdrive_torque_controller2:
-  ros__parameters:
-    arm_id: panda2
-    k_gains:
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
+# backdrive_torque_controller2:
+#   ros__parameters:
+#     arm_id: panda
+#     k_gains:
+#       - 1.0
+#       - 1.0
+#       - 1.0
+#       - 1.0
+#       - 1.0
+#       - 1.0
+#       - 1.0
