@@ -29,8 +29,8 @@ MoveToStartExampleController::command_interface_configuration() const {
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (int i = 1; i <= num_joints; ++i) {
-    // config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position"); //for fake hardware
+    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
+    // config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position"); //for fake hardware
   }
   return config;
 }

@@ -72,7 +72,7 @@ def generate_launch_description():
             description='Name of the panda: panda1 or panda2'),
         DeclareLaunchArgument(
             frame_prefix_name,
-            default_value='left_',
+            default_value='',
             description='Prefix for the panda.'),
         DeclareLaunchArgument(
             ns_name,

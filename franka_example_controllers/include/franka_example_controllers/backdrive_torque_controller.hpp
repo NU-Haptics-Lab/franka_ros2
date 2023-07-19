@@ -17,6 +17,7 @@
 #include <string>
 
 #include <controller_interface/controller_interface.hpp>
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 #include <Eigen/Eigen>
 #include <rclcpp/duration.hpp>
 #include <rclcpp/time.hpp>
@@ -50,5 +51,7 @@ class BackdriveTorqueController : public controller_interface::ControllerInterfa
 //   Vector7d initial_q_;
   Vector7d k_gains_;
   void updateJointStates();
+  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr cmds_;
+  
 };
 }  // namespace franka_example_controllers

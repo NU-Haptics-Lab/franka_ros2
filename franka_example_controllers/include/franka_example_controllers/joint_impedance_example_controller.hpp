@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string>
+#include <trajectory_msgs/msg/joint_trajectory_point.h>
 
 #include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>

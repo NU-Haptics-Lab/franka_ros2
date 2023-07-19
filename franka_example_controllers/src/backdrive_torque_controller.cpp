@@ -45,6 +45,7 @@ BackdriveTorqueController::state_interface_configuration() const {
 controller_interface::return_type BackdriveTorqueController::update(const rclcpp::Time &, const rclcpp::Duration &) {
   updateJointStates();
   // q_ *= 0.5; // alpha = 0.1
+  trajectory_msgs::msg::JointTrajectoryPoint msg;
   Vector7d tau_cmd = q_;
   int j{0};
   for (auto& command_interface : command_interfaces_) {
@@ -67,8 +68,10 @@ controller_interface::return_type BackdriveTorqueController::update(const rclcpp
     else if (tau_cmd(j) < -max_tau_cmd(j)) {
       command_interface.set_value(-max_tau_cmd(j));
     }
+    msg.effort.push_back(command_interface.get_value());
     j++;
   }
+  cmds_->publish(msg);
   return controller_interface::return_type::OK;
 }
 
@@ -99,6 +102,7 @@ controller_interface::return_type BackdriveTorqueController::init(
 
   try {
     auto_declare<std::string>("arm_id", "panda");
+    cmds_ = get_node()->create_publisher<trajectory_msgs::msg::JointTrajectoryPoint>("~/commands", 10);
     // auto_declare<std::vector<double>>("k_gains", {});
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());

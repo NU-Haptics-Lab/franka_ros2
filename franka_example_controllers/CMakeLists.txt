@@ -21,6 +21,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(franka_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 
 add_library(
         ${PROJECT_NAME}
@@ -43,6 +44,7 @@ ament_target_dependencies(
         pluginlib
         rclcpp
         rclcpp_lifecycle
+        trajectory_msgs
 )
 
 pluginlib_export_plugin_description_file(
