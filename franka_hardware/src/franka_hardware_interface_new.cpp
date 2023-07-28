@@ -78,18 +78,15 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
   // const auto kState = robot_->read();
   const auto kState = robot_->read();
   hw_positions_ = kState.q;
+  // hw_positions_ = mode_->coriolis(kState);/ / this is to check for tau_j -> tau_ext calc
   hw_velocities_ = kState.dq;
-  hw_coriolis_ = model_->coriolis(kState);
-  // hw_efforts_ = kState.tau_ext_hat_filtered - kState.tau_J;
+  // hw_coriolis_ = model_->coriolis(kState);
+  // hw_efforts_ = kState.tau_J;
   // hw_efforts_ = kState.tau_ext_hat_filtered;
-  // gravity_array = model->gravity(kState);
+  // gravity_array = model->gravity(kState); // this is to check for tau_j -> tau_ext calc
 
-  // std::cout << "coriolis array: [";
-  // for(int i{0}; i < (int) sizeof(hw_coriolis_.data()); i++){
-  //   std::cout << hw_coriolis_.data()[i] << ' ';
-  // }
-  // std::cout << std::endl;
 
+// NimbRo Implementation
   if (j > 0){
     if (j == 1){
       tau_bias = kState.tau_ext_hat_filtered;
@@ -104,6 +101,7 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
       hw_efforts_.data()[i] -= tau_bias.data()[i] - hw_coriolis_.data()[i];
     }
     
+    // Simple output function
     // std::cout << "feed forward torque: [";
     // for(int i{0}; i < (int) sizeof(hw_efforts_.data()); i++){
     //   std::cout << hw_efforts_.data()[i] << ' ';

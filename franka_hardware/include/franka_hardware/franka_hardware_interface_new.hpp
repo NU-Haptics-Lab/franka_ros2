@@ -66,6 +66,8 @@ class FrankaHardwareInterfaceNew
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
+
+  // rclcpp::Publisher<common_interfaces::SharedPtr cmds_;
 };
 
 }  // namespace franka_hardware
