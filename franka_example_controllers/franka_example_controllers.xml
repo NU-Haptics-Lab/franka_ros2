@@ -17,8 +17,8 @@
             The move to start example controller moves the robot into default pose.
         </description>
     </class>
-    <class name="franka_example_controllers/BackdriveTorqueController"
-           type="franka_example_controllers::BackdriveTorqueController" base_class_type="controller_interface::ControllerInterface">
+    <class name="franka_example_controllers/NimbroController"
+           type="franka_example_controllers::NimbroController" base_class_type="controller_interface::ControllerInterface">
         <description>
             Backdrivable torque controller to produce weightless feeling
         </description>

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <franka_example_controllers/backdrive_torque_controller.hpp>
+#include <franka_example_controllers/nimbro_controller.hpp>
 
 #include <exception>
 #include <string>
@@ -20,7 +20,7 @@
 namespace franka_example_controllers {
 
 controller_interface::InterfaceConfiguration
-BackdriveTorqueController::command_interface_configuration() const {
+NimbroController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
@@ -32,7 +32,7 @@ BackdriveTorqueController::command_interface_configuration() const {
 }
 
 controller_interface::InterfaceConfiguration
-BackdriveTorqueController::state_interface_configuration() const {
+NimbroController::state_interface_configuration() const {
     controller_interface::InterfaceConfiguration config;
     config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
     for (int i{1}; i <= num_joints; ++i) {
@@ -42,7 +42,7 @@ BackdriveTorqueController::state_interface_configuration() const {
   return config;
 }
 
-controller_interface::return_type BackdriveTorqueController::update(const rclcpp::Time &, const rclcpp::Duration &) {
+controller_interface::return_type NimbroController::update(const rclcpp::Time &, const rclcpp::Duration &) {
   updateJointStates();
   // q_ *= 0.5; // alpha = 0.1
   trajectory_msgs::msg::JointTrajectoryPoint msg;
@@ -76,7 +76,7 @@ controller_interface::return_type BackdriveTorqueController::update(const rclcpp
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-BackdriveTorqueController::on_configure(
+NimbroController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
     arm_id_ = get_node()->get_parameter("arm_id").as_string();
     // auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
@@ -87,13 +87,13 @@ BackdriveTorqueController::on_configure(
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-BackdriveTorqueController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+NimbroController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
   // updateJointStates();
   // initial_q_ = q_;
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type BackdriveTorqueController::init(
+controller_interface::return_type NimbroController::init(
     const std::string& controller_name, const std::string &, const rclcpp::NodeOptions &) {
   auto ret = ControllerInterface::init(controller_name);
   if (ret != controller_interface::return_type::OK) {
@@ -111,7 +111,7 @@ controller_interface::return_type BackdriveTorqueController::init(
   return controller_interface::return_type::OK;
 }
 
-void BackdriveTorqueController::updateJointStates() {
+void NimbroController::updateJointStates() {
   for (auto i = 0; i < num_joints; ++i) {
     // const auto& position_interface = state_interfaces_.at(2 * i);
     // const auto& velocity_interface = state_interfaces_.at(2 * i + 1);
@@ -129,5 +129,5 @@ void BackdriveTorqueController::updateJointStates() {
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
 // NOLINTNEXTLINE
-PLUGINLIB_EXPORT_CLASS(franka_example_controllers::BackdriveTorqueController,
+PLUGINLIB_EXPORT_CLASS(franka_example_controllers::NimbroController,
                        controller_interface::ControllerInterface)

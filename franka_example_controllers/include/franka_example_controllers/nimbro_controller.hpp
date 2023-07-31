@@ -27,7 +27,7 @@ namespace franka_example_controllers {
 /**
  * backdrivability controller (NimbRo controller)
  */
-class BackdriveTorqueController : public controller_interface::ControllerInterface {
+class NimbroController : public controller_interface::ControllerInterface {
  public:
     using Vector7d = Eigen::Matrix<double, 7, 1>;
     
