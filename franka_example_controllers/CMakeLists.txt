@@ -31,6 +31,7 @@ add_library(
         src/move_to_start_example_controller.cpp
         src/motion_generator.cpp
         src/nimbro_controller.cpp
+        src/backdrive_torque_controller.cpp
 )
 target_include_directories(
         ${PROJECT_NAME}

@@ -17,7 +17,10 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-    backdrive_torque_controller2:
+    nimbro_controller:
+      type: franka_example_controllers/NimbroController
+
+    backdrive_torque_controller:
       type: franka_example_controllers/BackdriveTorqueController
     
 
@@ -83,6 +86,17 @@ move_to_start_example_controller:
       - 10.0
       - 10.0
       - 5.
+nimbro_controller:
+  ros__parameters:
+    arm_id: panda
+    k_gains:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
 backdrive_torque_controller:
   ros__parameters:
     arm_id: panda
@@ -94,25 +108,3 @@ backdrive_torque_controller:
       - 1.0
       - 1.0
       - 1.0
-# backdrive_torque_controller1:
-#   ros__parameters:
-#     arm_id: panda1
-#     k_gains:
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-# backdrive_torque_controller2:
-#   ros__parameters:
-#     arm_id: panda
-#     k_gains:
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
-#       - 1.0
