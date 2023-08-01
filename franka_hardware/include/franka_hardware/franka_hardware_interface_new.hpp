@@ -28,6 +28,7 @@
 #include <rclcpp/logger.hpp>
 #include <rclcpp/macros.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include "std_msgs/msg/float64.hpp"
 
 namespace franka_hardware {
 
@@ -49,25 +50,30 @@ class FrankaHardwareInterfaceNew
   hardware_interface::return_type write(const rclcpp::Time & time, const rclcpp::Duration & period) override;
     CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
   static const size_t kNumberOfJoints = 7;
-  int j{0};
+  // int j{0};
   std::unique_ptr<FrankaRobot> robot_;
 
  private:
   
   std::array<double, kNumberOfJoints> tau_bias{0, 0, 0, 0, 0, 0, 0};
   std::unique_ptr<franka::Model> model_;
-  // std::array<double, kNumberOfJoints> gravity_array{0, 0, 0, 0, 0, 0, 0};
+  std::array<double, kNumberOfJoints*9> hw_positions_{0};
   std::array<double, kNumberOfJoints> hw_command_0_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
-  std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
+  // std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
+  
   std::array<double, kNumberOfJoints> hw_coriolis_{0, 0, 0, 0, 0, 0, 0};
+  std::array<double, kNumberOfJoints> gravity_array_{0, 0, 0, 0, 0, 0, 0};
+  std::array<double, 49> mass_matrix_{};
+
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
 
-  // rclcpp::Publisher<common_interfaces::SharedPtr cmds_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gravity_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr mass_matrix_pub_;
 };
 
 }  // namespace franka_hardware

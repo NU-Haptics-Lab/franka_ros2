@@ -36,13 +36,11 @@ std::vector<StateInterface> FrankaHardwareInterfaceNew::export_state_interfaces(
   std::vector<StateInterface> state_interfaces;
   for (auto i = 0U; i < info_.joints.size(); i++) {
     state_interfaces.emplace_back(StateInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_.at(i)));
+        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_.at(0)));
     state_interfaces.emplace_back(StateInterface(
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_.at(i)));
     state_interfaces.emplace_back(
         StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
-    // state_interfaces.emplace_back(
-    //     StateInterface(info_joints[i].name, "coriolis", &hw_coriolis_.at(i)))
   }
   return state_interfaces;
 }
@@ -77,29 +75,41 @@ FrankaHardwareInterfaceNew::CallbackReturn   FrankaHardwareInterfaceNew::on_deac
 hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::Time &, const rclcpp::Duration & ) {
   // const auto kState = robot_->read();
   const auto kState = robot_->read();
-  hw_positions_ = kState.q;
-  // hw_positions_ = mode_->coriolis(kState);/ / this is to check for tau_j -> tau_ext calc
-  hw_velocities_ = kState.dq;
+  // hw_positions_ = kState.q;
+  hw_coriolis_ = model_->coriolis(kState); // this is to check for tau_j -> tau_ext calc
+  hw_velocities_ = kState.tau_J; //net torque for tau_ext experiment
   // hw_coriolis_ = model_->coriolis(kState);
   // hw_efforts_ = kState.tau_J;
-  // hw_efforts_ = kState.tau_ext_hat_filtered;
-  // gravity_array = model->gravity(kState); // this is to check for tau_j -> tau_ext calc
+  hw_efforts_ = kState.tau_ext_hat_filtered;
+  gravity_array_ = model_->gravity(kState); // this is to check for tau_j -> tau_ext calc
+  mass_matrix_ = model_->mass(kState);
+  // hw_positions_[0] = hw_coriolis_;
+
+  for (int j{0}; j < 7; ++j){
+    hw_positions_[j] = hw_coriolis_[j];
+}
+  for (int i{7}; i < 14; ++i){
+    hw_positions_[i] = gravity_array_[i];
+  }
+  for (int i{14}; i < 63; ++i){
+    hw_positions_[i] = mass_matrix_[i];
+  }
 
 
 // NimbRo Implementation
-  if (j > 0){
-    if (j == 1){
-      tau_bias = kState.tau_ext_hat_filtered;
-    //   std::cout << "tau_bias: [";
-    //   for(int i{0}; i < (int) sizeof(tau_bias.data()); i++){
-    //     std::cout << tau_bias.data()[i] << ' ';
-    //   }
-    //   std::cout<<std::endl;
-    }
-    hw_efforts_ = kState.tau_ext_hat_filtered;
-    for(int i{0}; i < (int) sizeof(hw_efforts_.data()); i++){
-      hw_efforts_.data()[i] -= tau_bias.data()[i] - hw_coriolis_.data()[i];
-    }
+  // if (j > 0){
+  //   if (j == 1){
+  //     tau_bias = kState.tau_ext_hat_filtered;
+  //   //   std::cout << "tau_bias: [";
+  //   //   for(int i{0}; i < (int) sizeof(tau_bias.data()); i++){
+  //   //     std::cout << tau_bias.data()[i] << ' ';
+  //   //   }
+  //   //   std::cout<<std::endl;
+  //   }
+  //   hw_efforts_ = kState.tau_ext_hat_filtered;
+  //   for(int i{0}; i < (int) sizeof(hw_efforts_.data()); i++){
+  //     hw_efforts_.data()[i] -= tau_bias.data()[i] - hw_coriolis_.data()[i];
+  //   }
     
     // Simple output function
     // std::cout << "feed forward torque: [";
@@ -107,8 +117,8 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
     //   std::cout << hw_efforts_.data()[i] << ' ';
     // }
     // std::cout << "]\n";
-  }
-  j++;
+  // }
+  // j++;
   return hardware_interface::return_type::OK;
 }
 
