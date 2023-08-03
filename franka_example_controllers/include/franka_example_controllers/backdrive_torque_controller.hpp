@@ -32,7 +32,7 @@ namespace franka_example_controllers {
 class BackdriveTorqueController : public controller_interface::ControllerInterface {
  public:
     using Vector7d = Eigen::Matrix<double, 7, 1>;
-    using Vector63d = Eigen::Matrix<double, 63, 1>;
+    using Vector6d = Eigen::Vector<double, 6>;
     
     CallbackReturn on_init() override {return CallbackReturn::SUCCESS;};
     CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
@@ -46,22 +46,25 @@ class BackdriveTorqueController : public controller_interface::ControllerInterfa
     CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
+
   std::string arm_id_;
   const int num_joints = 7;
   double ext_torque_;
   Vector7d max_tau_cmd{1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2.0};
-  Vector7d tau_ext_;
-  Vector7d tau_j_;
-  Vector63d coriolis_gravity_mass;
+
+  double lambda{100.0};
+  double damping{0.0};
+  Vector7d F_tip{0,0,0,0,0,0,0};
+  Vector7d twist{0,0,0,0,0,0,0};
+  Vector6d d_twist{0,0,0,0,0,0};
+
+  Eigen::Matrix<double, 6,6> inv_lambda = 1.0/lambda * Eigen::Matrix<double,6,6>::Identity();
+  
+
+
 //   Vector7d initial_q_;
   Vector7d k_gains_;
   void updateJointStates();
-  // rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr whole_pub_; //effort
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr tau_ext_pub_; //effort
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr mass_matrix_pub_; // positions
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr coriolis_pub_; //positions
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr gravity_pub_; //positions
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr tau_J_pub_; //velocities
   
 };
 }  // namespace franka_example_controllers

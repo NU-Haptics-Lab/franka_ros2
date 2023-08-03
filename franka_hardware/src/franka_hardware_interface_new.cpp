@@ -39,6 +39,7 @@ std::vector<StateInterface> FrankaHardwareInterfaceNew::export_state_interfaces(
         info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_.at(0)));
     state_interfaces.emplace_back(StateInterface(
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_.at(i)));
+        //for my controller: effort state interface is Ftip
     state_interfaces.emplace_back(
         StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
   }
@@ -73,27 +74,24 @@ FrankaHardwareInterfaceNew::CallbackReturn   FrankaHardwareInterfaceNew::on_deac
 }
 
 hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::Time &, const rclcpp::Duration & ) {
-  // const auto kState = robot_->read();
-  const auto kState = robot_->read();
-  // hw_positions_ = kState.q;
-  hw_coriolis_ = model_->coriolis(kState); // this is to check for tau_j -> tau_ext calc
-  hw_velocities_ = kState.tau_J; //net torque for tau_ext experiment
+
+  auto kState = robot_->read();
+
+  F_tip_ = kState.O_F_ext_hat_K; //should be a negative number for force applied to robot
+  for (int i{0}; i < 6; ++i){
+    hw_efforts_[i] = F_tip_[i];
+  }
+
+  calculate_twist(kState.dq, model_->zeroJacobian(franka::Frame::kEndEffector, kState));
+  //hw_velocities set in calculate_twist function
+
+  hw_coriolis_ = model_->coriolis(kState);
+
   // hw_coriolis_ = model_->coriolis(kState);
   // hw_efforts_ = kState.tau_J;
-  hw_efforts_ = kState.tau_ext_hat_filtered;
   gravity_array_ = model_->gravity(kState); // this is to check for tau_j -> tau_ext calc
   mass_matrix_ = model_->mass(kState);
-  // hw_positions_[0] = hw_coriolis_;
-
-  for (int j{0}; j < 7; ++j){
-    hw_positions_[j] = hw_coriolis_[j];
-}
-  for (int i{7}; i < 14; ++i){
-    hw_positions_[i] = gravity_array_[i];
-  }
-  for (int i{14}; i < 63; ++i){
-    hw_positions_[i] = mass_matrix_[i];
-  }
+  hw_positions_;
 
 
 // NimbRo Implementation
@@ -128,7 +126,10 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::write(const rclcpp::
     return hardware_interface::return_type::ERROR;
   }
   
-  robot_->write(hw_commands_);
+  for (int i{0}; i < 6; ++i){
+    d_twist(i) = hw_commands_.data()[i];
+  }
+
 
   // std::cout << "commanded torque: [";
   // for(int i{0}; i < (int) sizeof(hw_commands_.data()); i++){
@@ -260,7 +261,34 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::prepare_command_mode
   }
   return hardware_interface::return_type::OK;
 }
+
+
+void FrankaHardwareInterfaceNew::calculate_twist(const std::array<double,7>& velocities,
+                                                  const std::array<double,42>& jac_array){
+    int k{0};
+    for (int i{0}; i < 6; ++i){
+      vel(i) = velocities[i];
+        for (int j{0}; j < 7; ++j){
+            jacobian(i,j) = jac_array[k];
+            ++k;
+        }
+    }
+    vel = jacobian*vel;
+    for (int i{0}; i < 6; ++i){
+      hw_velocities_[i] = vel(i);
+    }
+}
+
+void FrankaHardwareInterfaceNew::calculate_torque(const std::array<double, 7>& twist_dot){
+  for (int i{0}; i < 6; ++i){
+    d_twist(i) = twist_dot.data()[i];
+  }
+  
+}
+
 }  // namespace franka_hardware
+
+
 
 #include "pluginlib/class_list_macros.hpp"
 // NOLINTNEXTLINE
