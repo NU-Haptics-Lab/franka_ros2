@@ -18,7 +18,7 @@
 
 #include <controller_interface/controller_interface.hpp>
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
-#include <Eigen/Eigen>
+#include <Eigen/Core>
 #include <rclcpp/duration.hpp>
 #include <rclcpp/time.hpp>
 #include "std_msgs/msg/float64_multi_array.hpp"
@@ -31,7 +31,7 @@ namespace franka_example_controllers {
  */
 class BackdriveTorqueController : public controller_interface::ControllerInterface {
  public:
-    using Vector7d = Eigen::Matrix<double, 7, 1>;
+    using Vector7d = Eigen::Vector<double, 7>;
     using Vector6d = Eigen::Vector<double, 6>;
     
     CallbackReturn on_init() override {return CallbackReturn::SUCCESS;};
@@ -55,7 +55,9 @@ class BackdriveTorqueController : public controller_interface::ControllerInterfa
   double lambda{100.0};
   double damping{0.0};
   Vector7d F_tip{0,0,0,0,0,0,0};
+  Vector6d ftip{0,0,0,0,0,0};
   Vector7d twist{0,0,0,0,0,0,0};
+  Vector6d mtwist{0,0,0,0,0,0};
   Vector6d d_twist{0,0,0,0,0,0};
 
   Eigen::Matrix<double, 6,6> inv_lambda = 1.0/lambda * Eigen::Matrix<double,6,6>::Identity();

@@ -47,7 +47,10 @@ ament_target_dependencies(
         rclcpp
         rclcpp_lifecycle
         trajectory_msgs
+        Eigen3
 )
+
+target_link_libraries(franka_example_controllers Eigen3::Eigen)
 
 pluginlib_export_plugin_description_file(
         controller_interface franka_example_controllers.xml)

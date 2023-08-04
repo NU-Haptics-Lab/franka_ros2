@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include <franka/model.h>
 
@@ -29,7 +30,8 @@
 #include <rclcpp/macros.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include "std_msgs/msg/float64.hpp"
-#include <Eigen/Eigen>
+#include "Eigen/Core"
+#include "Eigen/QR"
 
 namespace franka_hardware {
 
@@ -65,35 +67,46 @@ class FrankaHardwareInterfaceNew
   std::array<double, kNumberOfJoints> hw_command_0_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
   // std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
- 
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
 
-
-  
-  
-  std::array<double, kNumberOfJoints> hw_coriolis_{0, 0, 0, 0, 0, 0, 0};
-  std::array<double, kNumberOfJoints> gravity_array_{0, 0, 0, 0, 0, 0, 0};
-  std::array<double, 49> mass_matrix_{};
+  // joint torque calculation variables
+  std::array<double, kNumberOfJoints> hw_coriolis_array{0, 0, 0, 0, 0, 0, 0};
+  Eigen::Vector<double, kNumberOfJoints> hw_coriolis_{0, 0, 0, 0, 0, 0, 0};
+  // std::array<double, kNumberOfJoints> gravity_array_{0, 0, 0, 0, 0, 0, 0};
+  // std::array<double, kNumberOfJoints> gravity_array_{0, 0, 0, 0, 0, 0, 0};
+  std::array<double, 49> mass_matrix_array{};
+  Eigen::Matrix<double, 7, 7> mass_matrix = Eigen::Matrix<double, 7, 7>::Zero();
+  Eigen::Vector<double, kNumberOfJoints> tau_cmd{0, 0, 0, 0, 0, 0, 0};
+  std::array<double, kNumberOfJoints> tau_cmd_array{0, 0, 0, 0, 0, 0, 0};
 
   // Twist calculation variables
   std::array<double, kNumberOfJoints*6> jacobian_array_{0, 0, 0, 0, 0, 0, 0};
-  Eigen::Matrix<double, 6,7> jacobian = Eigen::Matrix<double, 6, 7>::Zero();
+  Eigen::Matrix<double, 6, 7> jacobian = Eigen::Matrix<double, 6, 7>::Zero();
   Eigen::Vector<double, 7> vel{0,0,0,0,0,0,0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
-std::array<double, 6> F_tip_{0, 0, 0, 0, 0, 0};
+  std::array<double, 6> F_tip_{0, 0, 0, 0, 0, 0};
 
   //acceleration calculation variables
-  Eigen::Vector<double,6> d_twist{0,0,0,0,0,0,0};
+  Eigen::Vector<double,6> d_twist{0,0,0,0,0,0};
+  Eigen::Vector<double,7> accelerations_{0,0,0,0,0,0,0};
+  Eigen::Matrix<double, 7, 6> inv_jacobian = Eigen::Matrix<double, 7, 6>::Zero();
+  std::array<double, kNumberOfJoints*6> prev_jacobian_array_{0, 0, 0, 0, 0, 0, 0};
+  Eigen::Matrix<double, 6, 7> prev_jacobian = Eigen::Matrix<double, 6, 7>::Zero();
+  Eigen::Matrix<double, 6, 7> d_jacobian = Eigen::Matrix<double, 6, 7>::Zero();
 
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
+  franka::Duration dt{};
+  franka::Duration prev_time{};
 
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gravity_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr mass_matrix_pub_;
+  std::ofstream MyFile("hello.txt");
 
+  // helper functions
   void calculate_twist(const std::array<double,7>& velocities, const std::array<double,42>& jac_array);
   void calculate_torque(const std::array<double, 7>& twist_dot);
 };
+
+
 
 }  // namespace franka_hardware

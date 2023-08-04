@@ -19,6 +19,7 @@ find_package(franka_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 find_package(Franka REQUIRED)
 
@@ -29,6 +30,7 @@ add_library(franka_hardware
         src/franka_hardware_interface_new.cpp
         src/robot.cpp
         src/robot_new.cpp)
+target_link_libraries(franka_hardware Eigen3::Eigen)
 target_include_directories(
         franka_hardware
         PRIVATE
@@ -42,6 +44,7 @@ ament_target_dependencies(
         rclcpp
         franka_msgs
         std_msgs
+        Eigen3
 )
 pluginlib_export_plugin_description_file(hardware_interface franka_hardware.xml)
 

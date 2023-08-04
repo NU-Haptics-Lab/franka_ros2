@@ -37,20 +37,27 @@ BackdriveTorqueController::state_interface_configuration() const {
     config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
     for (int i{1}; i <= num_joints; ++i) {
         config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
-        config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
         config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/velocity");
+        config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
     }
   return config;
 }
 
 controller_interface::return_type BackdriveTorqueController::update(const rclcpp::Time &, const rclcpp::Duration &) {
   updateJointStates();
-  d_twist = inv_lambda * (F_tip - damping*twist);
-  d_twist = d_twist.reshaped(7,1);
+  for(int i{0}; i < 6; ++i){
+    ftip(i) = F_tip(i);
+    mtwist(i) = twist(i);
+  }
+  d_twist = inv_lambda * (ftip - damping*mtwist);
   int i{0};
   for (auto& command_interface : command_interfaces_) {
-    command_interface.set_value(d_twist(i));
-    ++i;
+    if(i < 6){
+      command_interface.set_value(d_twist(i));
+      ++i;
+    } else{
+      command_interface.set_value(0);
+    }
   }
   return controller_interface::return_type::OK;
 }
@@ -106,8 +113,8 @@ void BackdriveTorqueController::updateJointStates() {
     twist(i) = velocity_interface.get_value();
   }
 
-  F_tip = F_tip.reshaped(6,1);
-  twist = twist.reshaped(6,1);
+  
+  
 }
 
 }  // namespace franka_example_controllers

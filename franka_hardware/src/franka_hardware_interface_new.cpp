@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <chrono>
 
 #include <franka/exception.h>
 #include <hardware_interface/handle.hpp>
@@ -59,8 +60,20 @@ std::vector<CommandInterface> FrankaHardwareInterfaceNew::export_command_interfa
 FrankaHardwareInterfaceNew::CallbackReturn FrankaHardwareInterfaceNew::on_activate(const rclcpp_lifecycle::State &) {
   robot_->initializeContinuousReading();
   hw_commands_.fill(0);
+  auto initial_state = robot_->read();
+  prev_time = initial_state.time;
+  prev_jacobian_array_ = model_->zeroJacobian(franka::Frame::kEndEffector, initial_state);
+  int k{0};
+  for (int i{0}; i < 6; ++i){
+      for (int j{0}; j < 7; ++j){
+          prev_jacobian(i,j) = prev_jacobian_array_[k];
+          ++k;
+      }
+  }
   // Note: read does not use Time in the version of the api
   read(rclcpp::Time(), rclcpp::Time()-rclcpp::Time());  // makes sure that the robot state is properly initialized.
+  MyFile.open("~/output.txt");
+ 
   RCLCPP_INFO(getLogger(), "Started");
   
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -74,8 +87,9 @@ FrankaHardwareInterfaceNew::CallbackReturn   FrankaHardwareInterfaceNew::on_deac
 }
 
 hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::Time &, const rclcpp::Duration & ) {
-
   auto kState = robot_->read();
+  dt = kState.time - prev_time;
+  prev_time = kState.time;
 
   F_tip_ = kState.O_F_ext_hat_K; //should be a negative number for force applied to robot
   for (int i{0}; i < 6; ++i){
@@ -84,15 +98,29 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
 
   calculate_twist(kState.dq, model_->zeroJacobian(franka::Frame::kEndEffector, kState));
   //hw_velocities set in calculate_twist function
+  d_jacobian = (jacobian - prev_jacobian)/dt.toSec();
 
-  hw_coriolis_ = model_->coriolis(kState);
+  // coriolis vector
+  hw_coriolis_array = model_->coriolis(kState);
+  for (int i{0}; i < 7; ++i){
+        hw_coriolis_(i) = hw_coriolis_array[i];
+  }
 
   // hw_coriolis_ = model_->coriolis(kState);
   // hw_efforts_ = kState.tau_J;
-  gravity_array_ = model_->gravity(kState); // this is to check for tau_j -> tau_ext calc
-  mass_matrix_ = model_->mass(kState);
-  hw_positions_;
+  // gravity_array_ = model_->gravity(kState); // this is to check for tau_j -> tau_ext calc
 
+  mass_matrix_array = model_->mass(kState);
+  int f{0};
+  for (int i{0}; i < 7; ++i){
+    for (int j{0}; j < 7; ++j){
+        mass_matrix(i,j) = mass_matrix_array[f];
+        ++f;
+    }
+  }
+  MyFile << "mass matrix array: " << mass_matrix << std::endl;
+  MyFile << "jacobian array: " << jacobian << std::endl;
+  MyFile << "derivative of jacobian: " << d_jacobian << std::endl;
 
 // NimbRo Implementation
   // if (j > 0){
@@ -129,6 +157,23 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::write(const rclcpp::
   for (int i{0}; i < 6; ++i){
     d_twist(i) = hw_commands_.data()[i];
   }
+
+  // joint acceleration calculation
+  accelerations_ = jacobian.completeOrthogonalDecomposition().pseudoInverse() * (d_twist - d_jacobian*vel);
+  prev_jacobian = jacobian;
+
+  // joint torque calculation
+  tau_cmd = mass_matrix * accelerations_ + hw_coriolis_;
+  for(int i{0}; i < 7; i++){
+    if(abs(tau_cmd(i)) <= 1.0){
+      tau_cmd_array[i] = tau_cmd(i);
+    } else if (tau_cmd(i) > 1.0){
+      tau_cmd_array[i] = 1.0;
+    } else if (tau_cmd(i) < -1.0){
+      tau_cmd_array[i] = -1.0;
+    }
+  }
+  robot_->write(tau_cmd_array);
 
 
   // std::cout << "commanded torque: [";
@@ -273,18 +318,19 @@ void FrankaHardwareInterfaceNew::calculate_twist(const std::array<double,7>& vel
             ++k;
         }
     }
-    vel = jacobian*vel;
+    const auto ans = jacobian*vel;
     for (int i{0}; i < 6; ++i){
-      hw_velocities_[i] = vel(i);
+      hw_velocities_[i] = ans(i);
     }
 }
+
 
 void FrankaHardwareInterfaceNew::calculate_torque(const std::array<double, 7>& twist_dot){
   for (int i{0}; i < 6; ++i){
     d_twist(i) = twist_dot.data()[i];
   }
-  
 }
+
 
 }  // namespace franka_hardware
 
