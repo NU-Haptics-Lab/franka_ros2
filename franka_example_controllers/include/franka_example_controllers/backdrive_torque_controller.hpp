@@ -52,7 +52,7 @@ class BackdriveTorqueController : public controller_interface::ControllerInterfa
   double ext_torque_;
   Vector7d max_tau_cmd{1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2.0};
 
-  double lambda{100.0};
+  double lambda{200.0};
   double damping{0.0};
   Vector7d F_tip{0,0,0,0,0,0,0};
   Vector6d ftip{0,0,0,0,0,0};

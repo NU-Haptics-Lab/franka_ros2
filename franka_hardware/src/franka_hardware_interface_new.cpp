@@ -72,7 +72,6 @@ FrankaHardwareInterfaceNew::CallbackReturn FrankaHardwareInterfaceNew::on_activa
   }
   // Note: read does not use Time in the version of the api
   read(rclcpp::Time(), rclcpp::Time()-rclcpp::Time());  // makes sure that the robot state is properly initialized.
-  MyFile.open("~/output.txt");
  
   RCLCPP_INFO(getLogger(), "Started");
   
@@ -96,9 +95,9 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
     hw_efforts_[i] = F_tip_[i];
   }
 
-  calculate_twist(kState.dq, model_->zeroJacobian(franka::Frame::kEndEffector, kState));
+  hello.push(calculate_twist(kState.dq, model_->zeroJacobian(franka::Frame::kEndEffector, kState)));
   //hw_velocities set in calculate_twist function
-  d_jacobian = (jacobian - prev_jacobian)/dt.toSec();
+  hello.back().d_jacobian = (hello.back().jacobian - prev_jacobian)/dt.toSec();
 
   // coriolis vector
   hw_coriolis_array = model_->coriolis(kState);
@@ -118,9 +117,9 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::read(const rclcpp::T
         ++f;
     }
   }
-  MyFile << "mass matrix array: " << mass_matrix << std::endl;
-  MyFile << "jacobian array: " << jacobian << std::endl;
-  MyFile << "derivative of jacobian: " << d_jacobian << std::endl;
+  // MyFile << "mass matrix array: " << mass_matrix << std::endl;
+  // MyFile << "jacobian array: " << jacobian << std::endl;
+  // MyFile << "derivative of jacobian: " << d_jacobian << std::endl;
 
 // NimbRo Implementation
   // if (j > 0){
@@ -159,20 +158,21 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::write(const rclcpp::
   }
 
   // joint acceleration calculation
-  accelerations_ = jacobian.completeOrthogonalDecomposition().pseudoInverse() * (d_twist - d_jacobian*vel);
-  prev_jacobian = jacobian;
+  accelerations_ = hello.front().jacobian.completeOrthogonalDecomposition().pseudoInverse() * (d_twist - hello.front().d_jacobian*hello.front().vel);
+  prev_jacobian = hello.front().jacobian;
+  hello.pop();
 
   // joint torque calculation
   tau_cmd = mass_matrix * accelerations_ + hw_coriolis_;
   for(int i{0}; i < 7; i++){
-    if(abs(tau_cmd(i)) <= 1.0){
+    if(abs(tau_cmd(i)) > 0.001){
       tau_cmd_array[i] = tau_cmd(i);
-    } else if (tau_cmd(i) > 1.0){
-      tau_cmd_array[i] = 1.0;
-    } else if (tau_cmd(i) < -1.0){
-      tau_cmd_array[i] = -1.0;
+      std::cout << tau_cmd(i);
+    } else{
+      tau_cmd_array[i] = 0;
     }
   }
+  std::cout << std::endl;
   robot_->write(tau_cmd_array);
 
 
@@ -308,20 +308,23 @@ hardware_interface::return_type FrankaHardwareInterfaceNew::prepare_command_mode
 }
 
 
-void FrankaHardwareInterfaceNew::calculate_twist(const std::array<double,7>& velocities,
+FrankaHardwareInterfaceNew::Calculators FrankaHardwareInterfaceNew::calculate_twist(const std::array<double,7>& velocities,
                                                   const std::array<double,42>& jac_array){
     int k{0};
+    Calculators calctrs;
+    std::array<double, kNumberOfJoints> twist_{0, 0, 0, 0, 0, 0, 0};
     for (int i{0}; i < 6; ++i){
-      vel(i) = velocities[i];
+      calctrs.vel(i) = velocities[i];
         for (int j{0}; j < 7; ++j){
-            jacobian(i,j) = jac_array[k];
+            calctrs.jacobian(i,j) = jac_array[k];
             ++k;
         }
     }
     const auto ans = jacobian*vel;
     for (int i{0}; i < 6; ++i){
-      hw_velocities_[i] = ans(i);
+      calctrs.twist_[i] = ans(i);
     }
+    return calctrs;
 }
 
 

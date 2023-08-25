@@ -32,6 +32,7 @@
 #include "std_msgs/msg/float64.hpp"
 #include "Eigen/Core"
 #include "Eigen/QR"
+#include <queue>
 
 namespace franka_hardware {
 
@@ -56,6 +57,15 @@ class FrankaHardwareInterfaceNew
   static const size_t kNumberOfJoints = 7;
   // int j{0};
   std::unique_ptr<FrankaRobot> robot_;
+
+  struct Calculators{
+    std::array<double, 7> twist_;
+    Eigen::Vector<double, 7> vel{0,0,0,0,0,0,0};
+    Eigen::Matrix<double, 6, 7> jacobian{};
+    Eigen::Matrix<double, 6, 7> d_jacobian{};
+  };
+
+  std::queue<Calculators> hello{};
 
   
 
@@ -100,10 +110,10 @@ class FrankaHardwareInterfaceNew
   franka::Duration dt{};
   franka::Duration prev_time{};
 
-  std::ofstream MyFile("hello.txt");
+  // std::ofstream MyFile("hello.txt");
 
   // helper functions
-  void calculate_twist(const std::array<double,7>& velocities, const std::array<double,42>& jac_array);
+  Calculators calculate_twist(const std::array<double,7>& velocities, const std::array<double,42>& jac_array);
   void calculate_torque(const std::array<double, 7>& twist_dot);
 };
 
